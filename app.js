@@ -17,13 +17,33 @@ const app = express();
 
 app.set('trust proxy', 1);
 
-app.use(helmet({ crossOriginResourcePolicy: { policy: 'cross-origin' } }));
+app.use(
+  helmet({
+    crossOriginResourcePolicy: { policy: 'cross-origin' },
+    crossOriginEmbedderPolicy: false,
+  }),
+);
+
+// Allow every origin (reflect request Origin so credentials still work)
 app.use(
   cors({
-    origin: process.env.FRONTEND_URL || true,
+    origin: true,
     credentials: true,
-  })
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS', 'HEAD'],
+    allowedHeaders: [
+      'Content-Type',
+      'Authorization',
+      'X-Requested-With',
+      'Accept',
+      'Origin',
+      'Access-Control-Request-Method',
+      'Access-Control-Request-Headers',
+    ],
+    exposedHeaders: ['Content-Disposition'],
+    optionsSuccessStatus: 204,
+  }),
 );
+app.options('*', cors({ origin: true, credentials: true }));
 app.use(compression());
 app.use(express.json({ limit: '2mb' }));
 app.use(express.urlencoded({ extended: true }));
