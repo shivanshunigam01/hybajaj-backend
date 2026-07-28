@@ -5,8 +5,14 @@ const serviceBookingSchema = new mongoose.Schema(
     bookingCode: { type: String, required: true, unique: true },
     customerName: { type: String, required: true },
     phone: { type: String, required: true },
+    vehicleCategory: {
+      type: String,
+      enum: ['two_wheeler', 'electric', 'three_wheeler'],
+      default: 'two_wheeler',
+    },
     vehicleReg: String,
     model: String,
+    preferredBranch: String,
     serviceType: {
       type: String,
       enum: ['periodic', 'repair', 'emergency', 'amc'],

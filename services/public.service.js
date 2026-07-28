@@ -334,6 +334,16 @@ const submitExchange = async (body, photoUrls = []) => {
 };
 
 const bookService = async (body) => {
+  if (!body.customerName || !body.phone) throw new AppError('Name and phone are required', 400);
+  if (!isValidIndianMobile(body.phone)) throw new AppError('Invalid phone', 400);
+
+  const vehicleCategory = ['two_wheeler', 'electric', 'three_wheeler'].includes(body.vehicleCategory)
+    ? body.vehicleCategory
+    : 'two_wheeler';
+  const preferredDate = body.preferredDate
+    ? dayjs(body.preferredDate).toDate()
+    : dayjs().add(1, 'day').startOf('day').toDate();
+
   const lead = await createLead({
     name: body.customerName,
     phone: body.phone,
@@ -341,15 +351,40 @@ const bookService = async (body) => {
     source: 'Website',
     stage: 'New',
     model: body.model,
+    message: [
+      `Service (${body.serviceType || 'periodic'})`,
+      body.model ? `Model: ${body.model}` : null,
+      `Category: ${vehicleCategory}`,
+      body.preferredBranch ? `Branch: ${body.preferredBranch}` : null,
+      body.vehicleReg ? `Reg: ${body.vehicleReg}` : null,
+    ]
+      .filter(Boolean)
+      .join(' · '),
   });
+
   const bookingCode = await nextCode(ServiceBooking, { prefix: 'SV-', field: 'bookingCode', pad: 4 });
-  return ServiceBooking.create({
-    ...body,
+  const doc = await ServiceBooking.create({
     bookingCode,
+    customerName: body.customerName,
     phone: normalizePhone(body.phone),
+    vehicleCategory,
+    vehicleReg: body.vehicleReg || undefined,
+    model: body.model || undefined,
+    preferredBranch: body.preferredBranch || undefined,
+    serviceType: body.serviceType || 'periodic',
+    pickupRequired: body.pickupRequired === true || body.pickupRequired === 'true',
+    preferredDate,
+    notes: body.notes || undefined,
     leadId: lead._id,
     isEmergency: body.serviceType === 'emergency',
   });
+
+  return {
+    id: doc._id,
+    bookingCode: doc.bookingCode,
+    status: doc.status,
+    preferredDate: doc.preferredDate,
+  };
 };
 
 const enrolTraining = async (body) => {
