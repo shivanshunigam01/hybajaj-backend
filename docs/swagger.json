@@ -1,0 +1,178 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "HY Bajaj Drive API",
+    "description": "Production REST API for HY Bajaj website CRM and DSE productivity MIS. Source of truth: frontend docs/API_DOCUMENTATION.md",
+    "version": "1.0.0"
+  },
+  "servers": [{ "url": "http://localhost:5000/api", "description": "Local" }],
+  "components": {
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
+      }
+    },
+    "schemas": {
+      "Success": {
+        "type": "object",
+        "properties": {
+          "success": { "type": "boolean" },
+          "message": { "type": "string" },
+          "data": {},
+          "meta": {},
+          "pagination": {}
+        }
+      },
+      "Error": {
+        "type": "object",
+        "properties": {
+          "success": { "type": "boolean", "example": false },
+          "message": { "type": "string" },
+          "errors": { "type": "array", "items": { "type": "object" } }
+        }
+      }
+    }
+  },
+  "security": [{ "bearerAuth": [] }],
+  "paths": {
+    "/health": {
+      "get": {
+        "security": [],
+        "summary": "Health check",
+        "responses": { "200": { "description": "OK" } }
+      }
+    },
+    "/auth/login": {
+      "post": {
+        "security": [],
+        "summary": "Login",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["email", "password"],
+                "properties": {
+                  "email": { "type": "string" },
+                  "password": { "type": "string" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Login successful" },
+          "401": { "description": "Invalid credentials" }
+        }
+      }
+    },
+    "/auth/me": {
+      "get": {
+        "summary": "Current user",
+        "responses": { "200": { "description": "User profile" } }
+      }
+    },
+    "/public/contact": {
+      "post": {
+        "security": [],
+        "summary": "Public contact / enquiry",
+        "responses": { "201": { "description": "Lead created" } }
+      }
+    },
+    "/public/test-rides": {
+      "post": {
+        "security": [],
+        "summary": "Book test ride",
+        "responses": { "201": { "description": "Booking created" } }
+      }
+    },
+    "/public/products": {
+      "get": {
+        "security": [],
+        "summary": "List published products",
+        "responses": { "200": { "description": "Products" } }
+      }
+    },
+    "/public/branches": {
+      "get": {
+        "security": [],
+        "summary": "List branches",
+        "responses": { "200": { "description": "Branches" } }
+      }
+    },
+    "/leads": {
+      "get": {
+        "summary": "List leads",
+        "parameters": [
+          { "name": "stage", "in": "query", "schema": { "type": "string" } },
+          { "name": "q", "in": "query", "schema": { "type": "string" } },
+          { "name": "page", "in": "query", "schema": { "type": "integer" } }
+        ],
+        "responses": { "200": { "description": "Paginated leads" } }
+      },
+      "post": {
+        "summary": "Create lead",
+        "responses": { "201": { "description": "Created" } }
+      }
+    },
+    "/dse/dashboard": {
+      "get": {
+        "summary": "Mission Market Share KPIs",
+        "parameters": [
+          { "name": "month", "in": "query", "schema": { "type": "string", "example": "2026-06" } },
+          { "name": "branch", "in": "query", "schema": { "type": "string" } }
+        ],
+        "responses": { "200": { "description": "Dashboard payload" } }
+      }
+    },
+    "/dse/daily": {
+      "get": { "summary": "List DSE daily entries", "responses": { "200": { "description": "OK" } } },
+      "post": { "summary": "Create DSE daily entry", "responses": { "201": { "description": "Created" } } }
+    },
+    "/dse/finance-cases": {
+      "get": { "summary": "List finance cases", "responses": { "200": { "description": "OK" } } },
+      "post": { "summary": "Create finance case", "responses": { "201": { "description": "Created" } } }
+    },
+    "/dse/outlet-funnels": {
+      "get": { "summary": "List outlet funnels", "responses": { "200": { "description": "OK" } } },
+      "put": { "summary": "Upsert outlet funnel", "responses": { "200": { "description": "Saved" } } }
+    },
+    "/dse/lead-roi": {
+      "get": { "summary": "Lead source ROI", "responses": { "200": { "description": "OK" } } }
+    },
+    "/dse/weekly-reviews": {
+      "get": { "summary": "Weekly review actions", "responses": { "200": { "description": "OK" } } }
+    },
+    "/dse/mbr": {
+      "get": { "summary": "MBR matrix", "responses": { "200": { "description": "OK" } } }
+    },
+    "/setup/masters": {
+      "get": { "summary": "Setup masters", "responses": { "200": { "description": "OK" } } }
+    },
+    "/products": {
+      "get": { "summary": "Admin list products", "responses": { "200": { "description": "OK" } } }
+    },
+    "/media/upload": {
+      "post": {
+        "summary": "Upload media",
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "file": { "type": "string", "format": "binary" },
+                  "folder": { "type": "string" }
+                }
+              }
+            }
+          }
+        },
+        "responses": { "201": { "description": "Uploaded" } }
+      }
+    }
+  }
+}
