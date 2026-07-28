@@ -293,13 +293,20 @@ const applyFinance = async (body) => {
 
 const submitExchange = async (body, photoUrls = []) => {
   if (!isValidIndianMobile(body.phone)) throw new AppError('Invalid phone', 400);
+  const registrationNumber = String(body.registrationNumber || body.rcNumber || '').trim();
+  const kilometersRaw = body.kilometers;
+  const kilometers =
+    kilometersRaw === undefined || kilometersRaw === null || kilometersRaw === ''
+      ? undefined
+      : Number(kilometersRaw);
+
   const lead = await createLead({
     name: body.name,
     phone: body.phone,
     interest: 'Exchange valuation',
     source: 'Website',
     stage: 'New',
-    message: `Exchange ${body.make} ${body.model}`,
+    message: `Exchange ${body.make} ${body.model}${body.variantName ? ` ${body.variantName}` : ''} · Reg ${registrationNumber || 'n/a'} · KM ${kilometers ?? 'n/a'} · Insurance ${body.insurance || 'n/a'}`,
   });
   const exchangeCode = await nextCode(ExchangeRequest, { prefix: 'EX-', field: 'exchangeCode', pad: 3 });
   const doc = await ExchangeRequest.create({
@@ -308,8 +315,12 @@ const submitExchange = async (body, photoUrls = []) => {
     phone: normalizePhone(body.phone),
     make: body.make,
     model: body.model,
-    year: body.year,
-    rcNumber: body.rcNumber,
+    variantName: body.variantName || undefined,
+    year: body.year ? Number(body.year) : undefined,
+    rcNumber: registrationNumber || undefined,
+    registrationNumber: registrationNumber || undefined,
+    insurance: body.insurance || undefined,
+    kilometers: Number.isFinite(kilometers) ? kilometers : undefined,
     photoUrls,
     leadId: lead._id,
     offerValidUntil: dayjs().add(7, 'day').toDate(),

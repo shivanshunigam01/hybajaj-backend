@@ -7,8 +7,12 @@ const exchangeRequestSchema = new mongoose.Schema(
     phone: { type: String, required: true },
     make: { type: String, required: true },
     model: { type: String, required: true },
+    variantName: String,
     year: Number,
     rcNumber: String,
+    registrationNumber: String,
+    insurance: String,
+    kilometers: Number,
     photoUrls: { type: [String], default: [] },
     status: {
       type: String,
