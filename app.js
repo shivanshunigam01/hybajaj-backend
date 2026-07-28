@@ -17,19 +17,48 @@ const app = express();
 
 app.set('trust proxy', 1);
 
-app.use(
-  helmet({
-    crossOriginResourcePolicy: { policy: 'cross-origin' },
-    crossOriginEmbedderPolicy: false,
-  }),
-);
+/**
+ * CORS MUST be first.
+ * If a reverse-proxy/gateway returns 502 without these headers, the browser
+ * still reports a CORS error and the request never appears in Node logs.
+ */
+function applyCorsHeaders(req, res) {
+  const origin = req.headers.origin;
+  // Reflect any Origin so credentialed + non-credentialed both work
+  if (origin) {
+    res.setHeader('Access-Control-Allow-Origin', origin);
+    res.setHeader('Vary', 'Origin');
+  } else {
+    res.setHeader('Access-Control-Allow-Origin', '*');
+  }
+  res.setHeader('Access-Control-Allow-Credentials', 'true');
+  res.setHeader(
+    'Access-Control-Allow-Methods',
+    'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS'
+  );
+  res.setHeader(
+    'Access-Control-Allow-Headers',
+    req.headers['access-control-request-headers'] ||
+      'Content-Type, Authorization, X-Requested-With, Accept, Origin, Access-Control-Request-Method, Access-Control-Request-Headers'
+  );
+  res.setHeader('Access-Control-Expose-Headers', 'Content-Disposition');
+  res.setHeader('Access-Control-Max-Age', '86400');
+}
 
-// Allow every origin (reflect request Origin so credentials still work)
+app.use((req, res, next) => {
+  applyCorsHeaders(req, res);
+  if (req.method === 'OPTIONS') {
+    return res.status(204).end();
+  }
+  next();
+});
+
+// Keep cors package as a second layer for safety
 app.use(
   cors({
-    origin: true,
+    origin: (origin, cb) => cb(null, true),
     credentials: true,
-    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS', 'HEAD'],
+    methods: ['GET', 'HEAD', 'PUT', 'PATCH', 'POST', 'DELETE', 'OPTIONS'],
     allowedHeaders: [
       'Content-Type',
       'Authorization',
@@ -39,11 +68,19 @@ app.use(
       'Access-Control-Request-Method',
       'Access-Control-Request-Headers',
     ],
-    exposedHeaders: ['Content-Disposition'],
     optionsSuccessStatus: 204,
-  }),
+    preflightContinue: false,
+  })
 );
-app.options('*', cors({ origin: true, credentials: true }));
+
+app.use(
+  helmet({
+    crossOriginResourcePolicy: { policy: 'cross-origin' },
+    crossOriginEmbedderPolicy: false,
+    contentSecurityPolicy: false,
+  })
+);
+
 app.use(compression());
 app.use(express.json({ limit: '2mb' }));
 app.use(express.urlencoded({ extended: true }));
@@ -76,7 +113,14 @@ app.get('/', (_req, res) => {
 
 app.use('/api', apiRoutes);
 
+app.use((req, res, next) => {
+  applyCorsHeaders(req, res);
+  next();
+});
 app.use(notFound);
-app.use(errorHandler);
+app.use((err, req, res, next) => {
+  applyCorsHeaders(req, res);
+  return errorHandler(err, req, res, next);
+});
 
 module.exports = app;
