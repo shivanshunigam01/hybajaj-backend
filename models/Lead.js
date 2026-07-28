@@ -41,6 +41,8 @@ const leadSchema = new mongoose.Schema(
 
 leadSchema.index({ phone: 1, createdAt: -1 });
 leadSchema.index({ stage: 1, branchId: 1 });
+leadSchema.index({ isDeleted: 1, createdAt: -1 });
+leadSchema.index({ isDeleted: 1, stage: 1, updatedAt: -1 });
 leadSchema.index({ name: 'text', phone: 'text', message: 'text', leadCode: 'text' });
 
 module.exports = mongoose.model('Lead', leadSchema);

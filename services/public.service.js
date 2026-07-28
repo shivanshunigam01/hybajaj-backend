@@ -15,7 +15,14 @@ const { calcEmi } = require('../utils/dseMath');
 const { AppError } = require('../utils/AppError');
 const { testRideConfirmEmail, productInterestWelcomeEmail, leadAdminEmail } = require('./email.service');
 const { sendTestRideConfirm, sendProductInterestWelcome, sendNewLeadAlert } = require('./whatsapp.service');
+const { runInBackground } = require('../utils/background');
 const dayjs = require('dayjs');
+
+const PRODUCT_LIST_SELECT =
+  'name slug category tag tagline description exShowroomPrice emiFrom colors imageUrls brochureUrl isFeatured status';
+
+const BRANCH_LIST_SELECT =
+  'name code type address city state pincode phone whatsapp hours geo';
 
 const INTEREST_BY_CATEGORY = {
   motorcycle: 'New motorcycle',
@@ -24,7 +31,9 @@ const INTEREST_BY_CATEGORY = {
 };
 
 const getPublicSettings = async () => {
-  let settings = await Settings.findOne({ key: 'default' }).lean();
+  let settings = await Settings.findOne({ key: 'default' })
+    .select('website seo contact social')
+    .lean();
   if (!settings) {
     settings = await Settings.create({ key: 'default' });
     settings = settings.toObject();
@@ -42,18 +51,24 @@ const getPublicSettings = async () => {
 };
 
 const listPublicBranches = async () =>
-  Branch.find({ isDeleted: false, isActive: true }).sort({ type: 1, name: 1 });
+  Branch.find({ isDeleted: false, isActive: true })
+    .select(BRANCH_LIST_SELECT)
+    .sort({ type: 1, name: 1 })
+    .lean();
 
 const listPublicProducts = async (query = {}) => {
   const filter = { isDeleted: false, status: 'published' };
   if (query.category) filter.category = query.category;
   if (query.featured === 'true') filter.isFeatured = true;
   if (query.q) filter.name = new RegExp(query.q, 'i');
-  return Product.find(filter).sort({ isFeatured: -1, name: 1 });
+  return Product.find(filter)
+    .select(PRODUCT_LIST_SELECT)
+    .sort({ isFeatured: -1, name: 1 })
+    .lean();
 };
 
 const getPublicProduct = async (slug) => {
-  const product = await Product.findOne({ slug, isDeleted: false, status: 'published' });
+  const product = await Product.findOne({ slug, isDeleted: false, status: 'published' }).lean();
   if (!product) throw new AppError('Product not found', 404);
   return product;
 };
@@ -107,29 +122,14 @@ const submitProductInterest = async (body) => {
     { notify: false }
   );
 
-  await Promise.allSettled([
-    leadAdminEmail(lead),
-    productInterestWelcomeEmail(lead),
-    sendProductInterestWelcome(lead),
-    sendNewLeadAlert(lead),
-  ]).then((results) => {
-    const labels = ['leadAdminEmail', 'productInterestWelcomeEmail', 'whatsappWelcome', 'whatsappLeadAlert'];
-    results.forEach((r, i) => {
-      if (r.status === 'rejected') {
-        console.error(`[product-interest] ${labels[i]} failed:`, r.reason?.message || r.reason);
-      } else if (Array.isArray(r.value)) {
-        r.value.forEach((inner, j) => {
-          if (inner.status === 'rejected') {
-            console.error(`[product-interest] ${labels[i]}[${j}] failed:`, inner.reason?.message || inner.reason);
-          } else if (inner.value?.skipped) {
-            console.warn(`[product-interest] ${labels[i]}[${j}] skipped:`, inner.value.reason);
-          }
-        });
-      } else if (r.value?.skipped) {
-        console.warn(`[product-interest] ${labels[i]} skipped:`, r.value.reason);
-      }
-    });
-  });
+  runInBackground('product-interest-notify', () =>
+    Promise.allSettled([
+      leadAdminEmail(lead),
+      productInterestWelcomeEmail(lead),
+      sendProductInterestWelcome(lead),
+      sendNewLeadAlert(lead),
+    ])
+  );
 
   return { id: lead._id, leadId: lead.leadCode, stage: lead.stage };
 };
@@ -169,7 +169,9 @@ const bookTestRide = async (body) => {
     notes: body.notes,
   });
 
-  await Promise.allSettled([testRideConfirmEmail(booking, branch), sendTestRideConfirm(booking)]);
+  runInBackground('test-ride-notify', () =>
+    Promise.allSettled([testRideConfirmEmail(booking, branch), sendTestRideConfirm(booking)])
+  );
 
   return {
     id: booking._id,
@@ -317,8 +319,14 @@ const submitLicence = async (body) => {
   });
 };
 
-const listCourses = () => TrainingCourse.find({ isDeleted: false, isActive: true });
-const listAmcPlans = () => AmcPlan.find({ isDeleted: false, isActive: true });
+const listCourses = () =>
+  TrainingCourse.find({ isDeleted: false, isActive: true })
+    .select('name description fee durationDays batchTiming isActive')
+    .lean();
+const listAmcPlans = () =>
+  AmcPlan.find({ isDeleted: false, isActive: true })
+    .select('name price durationMonths benefits isActive')
+    .lean();
 
 const subscribeAmc = async (body) => {
   const plan = await AmcPlan.findById(body.planId);

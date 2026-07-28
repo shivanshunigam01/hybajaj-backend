@@ -6,6 +6,7 @@ const { AppError } = require('../utils/AppError');
 const { leadAdminEmail, contactAckEmail, quotationEmail } = require('./email.service');
 const { sendNewLeadAlert, sendQuotation } = require('./whatsapp.service');
 const { uploadFile } = require('./media.service');
+const { runInBackground } = require('../utils/background');
 
 const createLead = async (payload, { notify = true, userId } = {}) => {
   const leadCode = await nextCode(Lead, { prefix: 'L-', field: 'leadCode', pad: 4 });
@@ -17,7 +18,9 @@ const createLead = async (payload, { notify = true, userId } = {}) => {
     createdBy: userId,
   });
   if (notify) {
-    await Promise.allSettled([leadAdminEmail(lead), contactAckEmail(lead), sendNewLeadAlert(lead)]);
+    runInBackground('lead-notify', () =>
+      Promise.allSettled([leadAdminEmail(lead), contactAckEmail(lead), sendNewLeadAlert(lead)])
+    );
   }
   return lead;
 };
@@ -43,7 +46,16 @@ const listLeads = async (query) => {
     if (query.to) filter.updatedAt.$lte = new Date(query.to);
   }
   const [data, total] = await Promise.all([
-    Lead.find(filter).sort(sort).skip(skip).limit(limit).populate('assignedTo', 'name email').populate('branchId', 'name code'),
+    Lead.find(filter)
+      .sort(sort)
+      .skip(skip)
+      .limit(limit)
+      .select(
+        'leadCode name phone whatsapp email model interest source stage priority assignedTo branchId message updatedAt createdAt'
+      )
+      .populate('assignedTo', 'name email')
+      .populate('branchId', 'name code')
+      .lean(),
     Lead.countDocuments(filter),
   ]);
   return { data, meta: buildMeta(total, page, limit) };
@@ -95,13 +107,9 @@ const leadStats = async (query = {}) => {
     if (query.from) match.createdAt.$gte = new Date(query.from);
     if (query.to) match.createdAt.$lte = new Date(query.to);
   }
-  const byStage = await Lead.aggregate([
-    { $match: match },
-    { $group: { _id: '$stage', count: { $sum: 1 } } },
-  ]);
-  const bySource = await Lead.aggregate([
-    { $match: match },
-    { $group: { _id: '$source', count: { $sum: 1 } } },
+  const [byStage, bySource] = await Promise.all([
+    Lead.aggregate([{ $match: match }, { $group: { _id: '$stage', count: { $sum: 1 } } }]),
+    Lead.aggregate([{ $match: match }, { $group: { _id: '$source', count: { $sum: 1 } } }]),
   ]);
   return { byStage, bySource };
 };

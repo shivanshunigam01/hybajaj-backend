@@ -4,6 +4,7 @@ const { success } = require('../utils/apiResponse');
 const getPublicSite = async (_req, res, next) => {
   try {
     const data = await cmsService.getPublicSiteBundle();
+    res.set('Cache-Control', 'public, max-age=30, s-maxage=60');
     return success(res, { data });
   } catch (e) {
     next(e);
@@ -32,6 +33,7 @@ const resetHomepage = async (_req, res, next) => {
   try {
     const SiteContent = require('../models/SiteContent');
     await SiteContent.deleteOne({ key: 'homepage' });
+    cmsService.invalidatePublicSiteCache();
     const data = await cmsService.getHomepageContent();
     return success(res, { message: 'Reset to defaults', data });
   } catch (e) {

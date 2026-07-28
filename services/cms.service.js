@@ -300,11 +300,19 @@ const DEFAULT_HOMEPAGE = {
 };
 
 async function getHomepageContent() {
-  let doc = await SiteContent.findOne({ key: 'homepage' });
+  let doc = await SiteContent.findOne({ key: 'homepage' }).lean();
   if (!doc) {
-    doc = await SiteContent.create(DEFAULT_HOMEPAGE);
+    const created = await SiteContent.create(DEFAULT_HOMEPAGE);
+    doc = created.toObject();
   }
   return doc;
+}
+
+let siteCache = { at: 0, data: null };
+const SITE_CACHE_TTL_MS = 30_000;
+
+function invalidatePublicSiteCache() {
+  siteCache = { at: 0, data: null };
 }
 
 async function updateHomepageContent(payload) {
@@ -318,22 +326,28 @@ async function updateHomepageContent(payload) {
     upsert: true,
     new: true,
     setDefaultsOnInsert: true,
-  });
+  }).lean();
+  invalidatePublicSiteCache();
   return doc;
 }
 
 async function getPublicSiteBundle() {
+  const now = Date.now();
+  if (siteCache.data && now - siteCache.at < SITE_CACHE_TTL_MS) {
+    return siteCache.data;
+  }
+
   const [content, settings] = await Promise.all([
     getHomepageContent(),
-    Settings.findOne({ key: 'default' }).lean(),
+    Settings.findOne({ key: 'default' }).select('website contact social seo').lean(),
   ]);
 
   const published = (arr) =>
     (arr || []).filter((x) => x.published !== false).sort((a, b) => (a.order || 0) - (b.order || 0));
 
-  return {
+  const data = {
     content: {
-      ...content.toObject(),
+      ...content,
       heroes: published(content.heroes),
       productCategories: published(content.productCategories),
       offers: published(content.offers),
@@ -350,6 +364,9 @@ async function getPublicSiteBundle() {
         }
       : null,
   };
+
+  siteCache = { at: now, data };
+  return data;
 }
 
 module.exports = {
@@ -357,4 +374,5 @@ module.exports = {
   getHomepageContent,
   updateHomepageContent,
   getPublicSiteBundle,
+  invalidatePublicSiteCache,
 };

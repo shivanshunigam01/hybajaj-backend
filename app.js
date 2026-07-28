@@ -1,11 +1,9 @@
 const express = require('express');
 const path = require('path');
-const cors = require('cors');
 const helmet = require('helmet');
 const compression = require('compression');
 const hpp = require('hpp');
 const mongoSanitize = require('express-mongo-sanitize');
-const xss = require('xss-clean');
 const { loggerMiddleware } = require('./middlewares/logger.middleware');
 const { globalLimiter } = require('./middlewares/rateLimiter');
 const { notFound } = require('./middlewares/notFound.middleware');
@@ -24,7 +22,6 @@ app.set('trust proxy', 1);
  */
 function applyCorsHeaders(req, res) {
   const origin = req.headers.origin;
-  // Reflect any Origin so credentialed + non-credentialed both work
   if (origin) {
     res.setHeader('Access-Control-Allow-Origin', origin);
     res.setHeader('Vary', 'Origin');
@@ -53,26 +50,6 @@ app.use((req, res, next) => {
   next();
 });
 
-// Keep cors package as a second layer for safety
-app.use(
-  cors({
-    origin: (origin, cb) => cb(null, true),
-    credentials: true,
-    methods: ['GET', 'HEAD', 'PUT', 'PATCH', 'POST', 'DELETE', 'OPTIONS'],
-    allowedHeaders: [
-      'Content-Type',
-      'Authorization',
-      'X-Requested-With',
-      'Accept',
-      'Origin',
-      'Access-Control-Request-Method',
-      'Access-Control-Request-Headers',
-    ],
-    optionsSuccessStatus: 204,
-    preflightContinue: false,
-  })
-);
-
 app.use(
   helmet({
     crossOriginResourcePolicy: { policy: 'cross-origin' },
@@ -86,16 +63,11 @@ app.use(express.json({ limit: '2mb' }));
 app.use(express.urlencoded({ extended: true }));
 app.use(mongoSanitize());
 app.use(hpp());
-try {
-  app.use(xss());
-} catch {
-  // xss-clean may fail on newer Express — sanitization still covered by validators/mongoSanitize
-}
 app.use(globalLimiter);
 loggerMiddleware.forEach((mw) => app.use(mw));
 
-app.use('/static', express.static(path.join(__dirname, 'public')));
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+app.use('/static', express.static(path.join(__dirname, 'public'), { maxAge: '7d', etag: true }));
+app.use('/uploads', express.static(path.join(__dirname, 'uploads'), { maxAge: '1d', etag: true }));
 
 setupSwagger(app);
 

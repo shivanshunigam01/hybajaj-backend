@@ -11,7 +11,7 @@ const sendCampaign = async ({
   source = 'HY Bajaj CRM',
   paramsFallbackValue,
   media,
-  retries = 3,
+  retries = 1,
 }) => {
   if (!aisensy.apiKey) {
     console.warn('[whatsapp] AiSensy not configured — skipping', campaignName);
@@ -40,17 +40,21 @@ const sendCampaign = async ({
   let lastError;
   for (let i = 0; i < retries; i += 1) {
     try {
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), 5000);
       const res = await fetch(aisensy.baseUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
+        signal: controller.signal,
       });
+      clearTimeout(timer);
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data.message || `AiSensy HTTP ${res.status}`);
       return { skipped: false, data };
     } catch (err) {
       lastError = err;
-      await sleep(500 * (i + 1));
+      if (i + 1 < retries) await sleep(300 * (i + 1));
     }
   }
   console.error('[whatsapp] failed', lastError?.message);
