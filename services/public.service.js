@@ -134,10 +134,69 @@ const submitProductInterest = async (body) => {
   return { id: lead._id, leadId: lead.leadCode, stage: lead.stage };
 };
 
+const escapeRegex = (value = '') => String(value).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+const slugifyBranchCode = (name) =>
+  String(name || '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, 48) || `branch-${Date.now()}`;
+
+/** Resolve Mongo branch from branchId or Our Branches preferredBranch label. */
+const resolveBookingBranch = async (body) => {
+  if (body.branchId) {
+    const byId = await Branch.findById(body.branchId);
+    if (byId && !byId.isDeleted) return byId;
+  }
+
+  const preferred = String(body.preferredBranch || '').trim();
+  if (!preferred) throw new AppError('Preferred branch is required', 400);
+
+  const exact = await Branch.findOne({
+    isDeleted: false,
+    name: new RegExp(`^${escapeRegex(preferred)}$`, 'i'),
+  });
+  if (exact) return exact;
+
+  const partialKey = preferred.split(/[·|—-]/)[0].trim();
+  if (partialKey) {
+    const partial = await Branch.findOne({
+      isDeleted: false,
+      name: new RegExp(escapeRegex(partialKey), 'i'),
+    });
+    if (partial) return partial;
+  }
+
+  const code = slugifyBranchCode(preferred);
+  const isCommercial = /three|3w|sales|saraiya service|bhagwanpur|bakhari|kanti|khabra/i.test(
+    preferred
+  );
+
+  return Branch.findOneAndUpdate(
+    { code },
+    {
+      $setOnInsert: {
+        name: preferred,
+        code,
+        type: isCommercial ? 'commercial' : 'consumer',
+        address: `${preferred}, Muzaffarpur`,
+        city: 'Muzaffarpur',
+        state: 'Bihar',
+        phone: '9031082228',
+        hours: '9:30 AM - 7:00 PM',
+        isActive: true,
+        isDeleted: false,
+      },
+    },
+    { upsert: true, new: true }
+  );
+};
+
 const bookTestRide = async (body) => {
   if (!isValidIndianMobile(body.phone)) throw new AppError('Invalid phone', 400);
   if (!body.consentWhatsApp) throw new AppError('WhatsApp consent is required', 400);
-  const branch = await Branch.findById(body.branchId);
+  const branch = await resolveBookingBranch(body);
   if (!branch || branch.isDeleted) throw new AppError('Invalid branch', 400);
   if (dayjs(body.preferredDate).isBefore(dayjs().startOf('day'))) {
     throw new AppError('Date must be today or in the future', 400);
@@ -152,7 +211,7 @@ const bookTestRide = async (body) => {
     stage: 'Assigned',
     branchId: branch._id,
     whatsappOptIn: true,
-    message: `Test ride request: ${body.model} on ${body.preferredDate} ${body.timeSlot || ''}`,
+    message: `Test ride request: ${body.model} at ${branch.name} on ${body.preferredDate} ${body.timeSlot || ''}`,
   });
 
   const bookingCode = await nextCode(TestRide, { prefix: 'TR-', field: 'bookingCode', pad: 4 });
@@ -166,7 +225,7 @@ const bookTestRide = async (body) => {
     timeSlot: body.timeSlot || null,
     consentWhatsApp: true,
     leadId: lead._id,
-    notes: body.notes,
+    notes: body.notes || `Preferred branch: ${body.preferredBranch || branch.name}`,
   });
 
   runInBackground('test-ride-notify', () =>

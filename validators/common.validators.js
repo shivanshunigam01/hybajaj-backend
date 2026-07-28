@@ -45,7 +45,16 @@ const testRideValidator = [
   body('fullName').isLength({ min: 2, max: 80 }),
   body('phone').notEmpty(),
   body('model').notEmpty(),
-  body('branchId').isMongoId(),
+  body('branchId').optional({ nullable: true, checkFalsy: true }).isMongoId(),
+  body('preferredBranch')
+    .optional({ checkFalsy: true })
+    .isLength({ min: 2, max: 120 }),
+  body().custom((_, { req }) => {
+    if (!req.body.branchId && !String(req.body.preferredBranch || '').trim()) {
+      throw new Error('Preferred branch is required');
+    }
+    return true;
+  }),
   body('preferredDate').isISO8601(),
   body('timeSlot').optional().isIn(TEST_RIDE_SLOTS),
   body('consentWhatsApp')

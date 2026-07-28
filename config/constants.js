@@ -54,14 +54,15 @@ module.exports = {
   REVIEW_STATUSES: ['Open', 'In Progress', 'Closed', 'Hold'],
   BRANCH_NAMES: ['Muzaffarpur', 'Sheohar', 'Paroo', 'Karza'],
   TEST_RIDE_SLOTS: ['10:00 AM', '12:00 PM', '3:00 PM', '5:00 PM'],
+  /** Fallback sample models — website sends full catalog model names. */
   TEST_RIDE_MODELS: [
     'Pulsar NS200',
     'Pulsar N250',
     'Dominar 400',
     'Avenger 220',
     'Platina 110',
-    'Chetak Premium',
-    'Bajaj RE',
+    'Chetak 3501',
+    'RE Compact CNG Bifuel',
   ],
   PRODUCT_CATEGORIES: ['motorcycle', 'electric', 'three_wheeler'],
   HEALTH: {
