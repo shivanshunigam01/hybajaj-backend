@@ -383,7 +383,7 @@ const adminExtras = {
   },
   listCourses: async (req, res, next) => {
     try {
-      const data = await TrainingCourse.find({ isDeleted: false });
+      const data = await TrainingCourse.find({ isDeleted: false }).sort({ createdAt: 1 });
       return success(res, { data });
     } catch (e) {
       next(e);
@@ -391,8 +391,25 @@ const adminExtras = {
   },
   createCourse: async (req, res, next) => {
     try {
-      const data = await TrainingCourse.create(req.body);
+      const name = req.body.name || req.body.title;
+      const data = await TrainingCourse.create({
+        ...req.body,
+        name,
+        title: req.body.title || name,
+      });
       return success(res, { status: 201, data });
+    } catch (e) {
+      next(e);
+    }
+  },
+  updateCourse: async (req, res, next) => {
+    try {
+      const patch = { ...req.body };
+      if (patch.name && !patch.title) patch.title = patch.name;
+      if (patch.title && !patch.name) patch.name = patch.title;
+      const data = await TrainingCourse.findByIdAndUpdate(req.params.id, patch, { new: true });
+      if (!data) throw new AppError('Course not found', 404);
+      return success(res, { data });
     } catch (e) {
       next(e);
     }
@@ -405,7 +422,19 @@ const adminExtras = {
       next(e);
     }
   },
-  listEnrollments: crudList(TrainingEnrollment),
+  listEnrollments: async (req, res, next) => {
+    try {
+      const data = await TrainingEnrollment.find({ isDeleted: false })
+        .populate('courseId', 'name title fee')
+        .populate('batchId', 'startDate status')
+        .sort({ createdAt: -1 })
+        .limit(Number(req.query.limit) || 100)
+        .lean();
+      return success(res, { data });
+    } catch (e) {
+      next(e);
+    }
+  },
   updateEnrollment: async (req, res, next) => {
     try {
       const data = await TrainingEnrollment.findByIdAndUpdate(req.params.id, req.body, { new: true });

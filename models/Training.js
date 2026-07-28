@@ -2,11 +2,14 @@ const mongoose = require('mongoose');
 
 const trainingCourseSchema = new mongoose.Schema(
   {
-    title: { type: String, required: true },
-    durationHours: Number,
-    fee: Number,
-    womenOnlyBatchAvailable: { type: Boolean, default: false },
+    name: { type: String, required: true, trim: true },
+    title: { type: String, trim: true },
     description: String,
+    fee: { type: Number, default: 0 },
+    durationDays: { type: Number, default: 0 },
+    durationHours: Number,
+    batchTiming: String,
+    womenOnlyBatchAvailable: { type: Boolean, default: false },
     isActive: { type: Boolean, default: true },
     isDeleted: { type: Boolean, default: false },
   },
@@ -28,9 +31,12 @@ const trainingBatchSchema = new mongoose.Schema(
 
 const trainingEnrollmentSchema = new mongoose.Schema(
   {
-    batchId: { type: mongoose.Schema.Types.ObjectId, ref: 'TrainingBatch', required: true },
+    batchId: { type: mongoose.Schema.Types.ObjectId, ref: 'TrainingBatch' },
+    courseId: { type: mongoose.Schema.Types.ObjectId, ref: 'TrainingCourse' },
+    courseName: String,
     name: { type: String, required: true },
     phone: { type: String, required: true },
+    notes: String,
     paymentStatus: { type: String, enum: ['pending', 'paid', 'waived'], default: 'pending' },
     attendance: [{ date: Date, present: Boolean }],
     leadId: { type: mongoose.Schema.Types.ObjectId, ref: 'Lead' },

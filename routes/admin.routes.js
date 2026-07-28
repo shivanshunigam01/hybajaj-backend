@@ -62,6 +62,7 @@ router.get('/licence-requests', auth, adminOnly, adminExtras.listLicence);
 router.patch('/licence-requests/:id', auth, adminOnly, adminExtras.updateLicence);
 router.get('/training/courses', auth, requireRoles(ROLES.SUPER_ADMIN, ROLES.ADMIN, ROLES.TRAINER), adminExtras.listCourses);
 router.post('/training/courses', auth, adminOnly, adminExtras.createCourse);
+router.patch('/training/courses/:id', auth, adminOnly, adminExtras.updateCourse);
 router.post('/training/batches', auth, adminOnly, adminExtras.createBatch);
 router.get('/training/enrollments', auth, adminExtras.listEnrollments);
 router.patch('/training/enrollments/:id', auth, adminOnly, adminExtras.updateEnrollment);

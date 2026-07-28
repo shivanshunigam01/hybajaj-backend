@@ -387,25 +387,152 @@ const bookService = async (body) => {
   };
 };
 
+const DEFAULT_TRAINING_COURSES = [
+  {
+    name: 'Two-Wheeler Basics',
+    description: 'For first-time riders.',
+    fee: 2499,
+    durationDays: 7,
+    batchTiming: 'Morning · Evening',
+  },
+  {
+    name: 'Two-Wheeler Advanced',
+    description: 'Highway riding, night riding.',
+    fee: 3999,
+    durationDays: 10,
+    batchTiming: 'Weekend',
+  },
+  {
+    name: 'Women-Only Riding',
+    description: 'Female instructors. Small batches.',
+    fee: 2999,
+    durationDays: 8,
+    batchTiming: 'Morning',
+    womenOnlyBatchAvailable: true,
+  },
+  {
+    name: 'Three-Wheeler Commercial',
+    description: 'Includes RTO test prep.',
+    fee: 4999,
+    durationDays: 14,
+    batchTiming: 'Full day',
+  },
+  {
+    name: 'Road Safety Refresher',
+    description: 'Rules, first aid, hazards.',
+    fee: 999,
+    durationDays: 2,
+    batchTiming: 'Weekend',
+  },
+  {
+    name: 'Corporate Fleet Training',
+    description: 'For delivery riders.',
+    fee: 0,
+    durationDays: 0,
+    batchTiming: 'On-site',
+  },
+];
+
+const ensureDefaultCourses = async () => {
+  const count = await TrainingCourse.countDocuments({ isDeleted: false });
+  if (count > 0) return;
+  await TrainingCourse.insertMany(
+    DEFAULT_TRAINING_COURSES.map((c) => ({
+      ...c,
+      title: c.name,
+      isActive: true,
+      isDeleted: false,
+    }))
+  );
+};
+
+const listCourses = async () => {
+  await ensureDefaultCourses();
+  const courses = await TrainingCourse.find({ isDeleted: false, isActive: true })
+    .select('name title description fee durationDays durationHours batchTiming isActive womenOnlyBatchAvailable')
+    .sort({ createdAt: 1 })
+    .lean();
+
+  return courses.map((c) => ({
+    _id: c._id,
+    name: c.name || c.title,
+    title: c.title || c.name,
+    description: c.description || '',
+    fee: c.fee ?? 0,
+    durationDays: c.durationDays ?? 0,
+    durationHours: c.durationHours,
+    batchTiming: c.batchTiming || '—',
+    womenOnlyBatchAvailable: !!c.womenOnlyBatchAvailable,
+    isActive: c.isActive !== false,
+  }));
+};
+
 const enrolTraining = async (body) => {
-  const batch = await TrainingBatch.findById(body.batchId);
-  if (!batch) throw new AppError('Batch not found', 404);
+  const studentName = String(body.studentName || body.name || '').trim();
+  const phone = String(body.phone || '').trim();
+  if (!studentName || !phone) throw new AppError('Name and phone are required', 400);
+  if (!isValidIndianMobile(phone)) throw new AppError('Invalid phone', 400);
+
+  await ensureDefaultCourses();
+
+  let course = null;
+  if (body.courseId) {
+    course = await TrainingCourse.findOne({ _id: body.courseId, isDeleted: false });
+  }
+  if (!course && body.courseName) {
+    course = await TrainingCourse.findOne({
+      isDeleted: false,
+      $or: [{ name: body.courseName }, { title: body.courseName }],
+    });
+  }
+  if (!course) throw new AppError('Course not found', 404);
+
+  const courseName = course.name || course.title;
+
+  let batch = await TrainingBatch.findOne({
+    courseId: course._id,
+    isDeleted: false,
+    status: { $in: ['upcoming', 'active'] },
+  }).sort({ startDate: 1 });
+
+  if (!batch) {
+    batch = await TrainingBatch.create({
+      courseId: course._id,
+      startDate: dayjs().add(3, 'day').startOf('day').toDate(),
+      capacity: 20,
+      enrolledCount: 0,
+      status: 'upcoming',
+    });
+  }
+
   const lead = await createLead({
-    name: body.name,
-    phone: body.phone,
+    name: studentName,
+    phone,
     interest: 'Driving training',
     source: 'Website',
     stage: 'New',
+    message: `Training enrollment: ${courseName}${body.notes ? ` · ${body.notes}` : ''}`,
   });
+
   const enrollment = await TrainingEnrollment.create({
     batchId: batch._id,
-    name: body.name,
-    phone: normalizePhone(body.phone),
+    courseId: course._id,
+    courseName,
+    name: studentName,
+    phone: normalizePhone(phone),
+    notes: body.notes || undefined,
     leadId: lead._id,
   });
-  batch.enrolledCount += 1;
+
+  batch.enrolledCount = (batch.enrolledCount || 0) + 1;
   await batch.save();
-  return enrollment;
+
+  return {
+    id: enrollment._id,
+    courseId: course._id,
+    courseName,
+    paymentStatus: enrollment.paymentStatus,
+  };
 };
 
 const submitLicence = async (body) => {
@@ -417,17 +544,13 @@ const submitLicence = async (body) => {
     stage: 'New',
   });
   return LicenceRequest.create({
-    type: body.type,
+    type: body.type || body.licenceType,
     name: body.name,
     phone: normalizePhone(body.phone),
     leadId: lead._id,
   });
 };
 
-const listCourses = () =>
-  TrainingCourse.find({ isDeleted: false, isActive: true })
-    .select('name description fee durationDays batchTiming isActive')
-    .lean();
 const listAmcPlans = () =>
   AmcPlan.find({ isDeleted: false, isActive: true })
     .select('name price durationMonths benefits isActive')
