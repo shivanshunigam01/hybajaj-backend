@@ -40,15 +40,6 @@ const DEFAULT_HOMEPAGE = {
       order: 3,
       published: true,
     },
-    {
-      image: '/images/heroes/three-wheelers/brand-page.webp',
-      alt: 'Bajaj Three Wheelers',
-      title: '3 Wheelers & Qute',
-      link: '/three-wheelers',
-      cta: 'Explore Now',
-      order: 4,
-      published: true,
-    },
   ],
   trust: {
     countLabel: '50,000+',
@@ -299,13 +290,22 @@ const DEFAULT_HOMEPAGE = {
   averageRating: '4.8 / 5',
 };
 
+const REMOVED_HERO_IMAGE = '/images/heroes/three-wheelers/brand-page.webp';
+
 async function getHomepageContent() {
-  let doc = await SiteContent.findOne({ key: 'homepage' }).lean();
+  let doc = await SiteContent.findOne({ key: 'homepage' });
   if (!doc) {
     const created = await SiteContent.create(DEFAULT_HOMEPAGE);
-    doc = created.toObject();
+    return created.toObject();
   }
-  return doc;
+
+  const before = doc.heroes?.length || 0;
+  doc.heroes = (doc.heroes || []).filter((h) => h.image !== REMOVED_HERO_IMAGE);
+  if (doc.heroes.length !== before) {
+    await doc.save();
+    invalidatePublicSiteCache();
+  }
+  return doc.toObject();
 }
 
 let siteCache = { at: 0, data: null };
