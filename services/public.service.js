@@ -90,8 +90,10 @@ const submitContact = async (body) => {
 };
 
 const submitProductInterest = async (body) => {
-  if (!isValidIndianMobile(body.phone)) throw new AppError('Invalid contact number', 400);
-  if (!isValidIndianMobile(body.whatsapp)) throw new AppError('Invalid WhatsApp number', 400);
+  const phone = normalizePhone(body.phone);
+  const whatsapp = normalizePhone(body.whatsapp);
+  if (!isValidIndianMobile(phone)) throw new AppError('Invalid contact number', 400);
+  if (!isValidIndianMobile(whatsapp)) throw new AppError('Invalid WhatsApp number', 400);
   if (!body.model || !String(body.model).trim()) throw new AppError('Product model is required', 400);
   if (!body.address || String(body.address).trim().length < 5) {
     throw new AppError('Address is required', 400);
@@ -103,8 +105,8 @@ const submitProductInterest = async (body) => {
   const lead = await createLead(
     {
       name: body.name,
-      phone: body.phone,
-      whatsapp: body.whatsapp,
+      phone,
+      whatsapp,
       email: body.email || undefined,
       address: String(body.address).trim(),
       model: String(body.model).trim(),
