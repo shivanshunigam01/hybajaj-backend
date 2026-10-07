@@ -17,6 +17,11 @@ const { AmcPlan } = require('../models/Amc');
 const { parseListQuery, buildMeta } = require('../helpers/queryHelper');
 const { nextCode } = require('../helpers/codeHelper');
 const { uploadFile, deleteMedia } = require('../services/media.service');
+const {
+  parseProductBody,
+  resolveCategoryId,
+  buildImageUrlsForSave,
+} = require('../helpers/productHelper');
 const { AppError } = require('../utils/AppError');
 const { success } = require('../utils/apiResponse');
 const { ROLES } = require('../config/constants');
@@ -46,22 +51,31 @@ const products = {
   }),
   create: async (req, res, next) => {
     try {
-      const imageUrls = [];
-      if (req.files?.length) {
-        for (const file of req.files) {
-          const media = await uploadFile(file, {
-            folder: 'products',
-            entityType: 'product',
-            userId: req.user._id,
-          });
-          imageUrls.push(media.url);
-        }
+      const fields = parseProductBody(req.body);
+      if (!fields.name) throw new AppError('Product name is required', 400);
+      if (!fields.slug && fields.name) {
+        fields.slug = fields.name
+          .toLowerCase()
+          .trim()
+          .replace(/[^a-z0-9]+/g, '-')
+          .replace(/^-|-$/g, '')
+          .slice(0, 80);
       }
+      if (!fields.category) throw new AppError('Category is required', 400);
+      if (fields.exShowroomPrice == null || Number.isNaN(fields.exShowroomPrice)) {
+        throw new AppError('Ex-showroom price is required', 400);
+      }
+      const categoryId = await resolveCategoryId(fields.category);
+      const imageUrls = await buildImageUrlsForSave({
+        body: req.body,
+        files: req.files,
+        userId: req.user._id,
+        existingUrls: [],
+      });
       const data = await Product.create({
-        ...req.body,
-        exShowroomPrice: Number(req.body.exShowroomPrice),
-        isFeatured: req.body.isFeatured === true || req.body.isFeatured === 'true',
-        imageUrls,
+        ...fields,
+        categoryId,
+        imageUrls: imageUrls || [],
         createdBy: req.user._id,
       });
       return success(res, { status: 201, message: 'Product created', data });
@@ -71,12 +85,27 @@ const products = {
   },
   update: async (req, res, next) => {
     try {
+      const existing = await Product.findOne({ _id: req.params.id, isDeleted: false });
+      if (!existing) throw new AppError('Product not found', 404);
+
+      const fields = parseProductBody(req.body);
+      if (fields.category) {
+        fields.categoryId = await resolveCategoryId(fields.category);
+      }
+      const imageUrls = await buildImageUrlsForSave({
+        body: req.body,
+        files: req.files,
+        userId: req.user._id,
+        existingUrls: existing.imageUrls,
+      });
+      const update = { ...fields };
+      if (imageUrls !== undefined) update.imageUrls = imageUrls;
+
       const data = await Product.findOneAndUpdate(
         { _id: req.params.id, isDeleted: false },
-        req.body,
-        { new: true }
+        update,
+        { new: true, runValidators: true }
       );
-      if (!data) throw new AppError('Product not found', 404);
       return success(res, { message: 'Product updated', data });
     } catch (e) {
       next(e);

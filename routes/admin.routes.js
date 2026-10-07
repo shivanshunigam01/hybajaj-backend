@@ -15,7 +15,7 @@ router.post('/cms/homepage/reset', auth, requireRoles(ROLES.SUPER_ADMIN), cmsCtr
 // Products
 router.get('/products', auth, requireRoles(ROLES.SUPER_ADMIN, ROLES.ADMIN, ROLES.SALES), products.list);
 router.post('/products', auth, adminOnly, uploadMultiple('images', 10), products.create);
-router.patch('/products/:id', auth, adminOnly, products.update);
+router.patch('/products/:id', auth, adminOnly, uploadMultiple('images', 10), products.update);
 router.delete('/products/:id', auth, adminOnly, products.remove);
 
 router.get('/categories', auth, categories.list);
