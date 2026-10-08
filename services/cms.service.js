@@ -290,7 +290,8 @@ const DEFAULT_HOMEPAGE = {
   dealerTagline: 'Driving Dreams, Delivering Excellence',
   averageRating: '4.8 / 5',
   financePromo: {
-    image: '/images/heroes/motorcycles/ns400-homepage.webp',
+    image:
+      'https://images.unsplash.com/photo-1558981403-c5f9899a28cb?auto=format&fit=crop&w=1600&q=80',
     title: 'Check Finance Offers',
     subtitle:
       'Drive home your Bajaj with easy EMI. Our finance desk helps you compare plans from leading partners.',
