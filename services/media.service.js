@@ -12,12 +12,14 @@ const ensureLocalPublic = (relativePath) => {
   return full;
 };
 
-const processImage = async (filePath, { width = 1600 } = {}) => {
+const PRESERVE_ORIGINAL_FOLDERS = new Set(['cms', 'homepage', 'heroes', 'website']);
+
+const processImage = async (filePath, { width = 2400, quality = 92 } = {}) => {
   const out = `${filePath}.processed.jpg`;
   await sharp(filePath)
     .rotate()
     .resize({ width, withoutEnlargement: true })
-    .jpeg({ quality: 82 })
+    .jpeg({ quality, mozjpeg: true })
     .toFile(out);
   return out;
 };
@@ -31,7 +33,10 @@ const uploadFile = async (file, { folder = 'misc', entityType, entityId, userId 
   let uploadPath = file.path;
 
   if (isImage && file.mimetype !== 'image/svg+xml') {
-    uploadPath = await processImage(file.path);
+    const preserveOriginal = PRESERVE_ORIGINAL_FOLDERS.has(folder);
+    if (!preserveOriginal) {
+      uploadPath = await processImage(file.path);
+    }
   }
 
   let url;

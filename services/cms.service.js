@@ -6,39 +6,30 @@ const DEFAULT_HOMEPAGE = {
   key: 'homepage',
   heroes: [
     {
-      image: '/images/heroes/motorcycles/ns400-homepage.webp',
-      alt: 'Bajaj Pulsar NS400',
-      title: 'Pulsar NS400',
+      image: '/images/heroes/motorcycles/ns400z-banner-desktop.webp',
+      alt: 'Bajaj Pulsar NS400Z — Peak Performance',
+      title: 'Pulsar NS400Z',
       link: '/motorcycles',
       cta: 'Book Test Ride',
       order: 0,
       published: true,
     },
     {
-      image: '/images/heroes/motorcycles/ns125-whatsnew-web.webp',
-      alt: 'Bajaj Pulsar NS125',
-      title: 'Pulsar NS125',
+      image: '/images/heroes/motorcycles/pulsar-150-banner-desktop.webp',
+      alt: 'Bajaj Pulsar — Move up to Pulsar',
+      title: 'Pulsar 150 & N160 SS',
       link: '/motorcycles',
       cta: 'Explore Motorcycles',
       order: 1,
       published: true,
     },
     {
-      image: '/images/heroes/motorcycles/d400-homepage.webp',
-      alt: 'Bajaj Dominar 400',
-      title: 'Dominar 400',
-      link: '/motorcycles',
-      cta: 'Explore Now',
+      image: '/images/heroes/wego-banner.webp',
+      alt: 'New Bajaj Wego electric three-wheelers',
+      title: 'Bajaj Wego',
+      link: '/three-wheelers',
+      cta: 'Explore 3-Wheelers',
       order: 2,
-      published: true,
-    },
-    {
-      image: '/images/heroes/electric/c25-web.webp',
-      alt: 'Bajaj Chetak Electric',
-      title: 'Chetak Electric',
-      link: '/electric',
-      cta: 'Explore EV',
-      order: 3,
       published: true,
     },
   ],
@@ -85,7 +76,7 @@ const DEFAULT_HOMEPAGE = {
       desc: 'Low down payment & flexible EMI on Pulsar, Dominar and Chetak.',
       cta: 'Check finance',
       to: '/finance',
-      image: '/images/heroes/motorcycles/ns400-homepage.webp',
+      image: '/images/heroes/motorcycles/ns400z-banner-desktop.webp',
       tone: 'brand',
       order: 0,
       published: true,
@@ -95,7 +86,7 @@ const DEFAULT_HOMEPAGE = {
       desc: 'Get extra value when you exchange your old two-wheeler at HY Bajaj.',
       cta: 'Start exchange',
       to: '/exchange',
-      image: '/images/products/motorcycles/N160.webp',
+      image: '/images/products/motorcycles/pulsar-rs200.webp',
       tone: 'navy',
       order: 1,
       published: true,
@@ -105,7 +96,7 @@ const DEFAULT_HOMEPAGE = {
       desc: 'Book a free Chetak EV demo at Khabar Mandir or Saraiya Manikpur.',
       cta: 'Book demo',
       to: '/test-ride',
-      image: '/images/heroes/electric/c25-web.webp',
+      image: '/images/products/electric/3501.webp',
       tone: 'surface',
       order: 2,
       published: true,
@@ -115,7 +106,7 @@ const DEFAULT_HOMEPAGE = {
       desc: 'Ex-showroom price list WEF 08-07-2026 — ask area executives for on-road.',
       cta: 'View 3 wheelers',
       to: '/three-wheelers',
-      image: '/images/heroes/three-wheelers/brand-page.webp',
+      image: '/images/heroes/wego-banner.webp',
       tone: 'dark',
       order: 3,
       published: true,
@@ -128,10 +119,10 @@ const DEFAULT_HOMEPAGE = {
     { n: '04', t: 'Exchange & Drive Away', d: 'Paperwork done — ride your new Bajaj home.' },
   ],
   financeBullets: [
-    'Lowest down payment options',
-    'Instant approval process',
-    'Flexible tenure & EMI plans',
-    'Minimal documentation',
+    'Max tenure: 48 months',
+    'Lowest Processing Fees: 1% or Rs 750 whichever is lowest',
+    'Lowest ROI: 9.49%',
+    'EMI: Less than Rs 100 per day',
   ],
   featured: [
     {
@@ -270,7 +261,7 @@ const DEFAULT_HOMEPAGE = {
       title: 'About HY Bajaj',
       desc: "Our story as Muzaffarpur's trusted Bajaj destination for sales and service.",
       to: '/about',
-      image: '/images/heroes/motorcycles/ns400-homepage.webp',
+      image: '/images/heroes/motorcycles/ns400z-banner-desktop.webp',
     },
     {
       title: 'Service & workshop',
@@ -284,17 +275,51 @@ const DEFAULT_HOMEPAGE = {
       to: '/contact',
       image: '/images/heroes/electric/c25-web.webp',
     },
+    {
+      title: 'Finance & EMI',
+      desc: 'Compare tenure, processing fee and EMI options with our finance desk.',
+      to: '/finance',
+      image: '/images/home/finance-offers-banner.webp',
+    },
+    {
+      title: 'Book a test ride',
+      desc: 'Schedule a Pulsar, Dominar or Chetak test ride at HY Bajaj Muzaffarpur.',
+      to: '/test-ride',
+      image: '/images/products/motorcycles/Pulsar%20N250.webp',
+    },
+    {
+      title: 'Exchange program',
+      desc: 'Upgrade from your old two-wheeler with fair valuation and quick paperwork.',
+      to: '/exchange',
+      image: '/images/products/motorcycles/pulsar-rs200.webp',
+    },
+    {
+      title: 'Rider training',
+      desc: 'Licence assistance and riding programs for new and commercial riders.',
+      to: '/training',
+      image: '/images/products/motorcycles/NS200.webp',
+    },
+    {
+      title: 'Commercial three-wheelers',
+      desc: 'Passenger, cargo and electric WEGO range with area sales support.',
+      to: '/three-wheelers',
+      image: '/images/heroes/wego-banner.webp',
+    },
+    {
+      title: 'Chetak electric',
+      desc: 'Explore connected Chetak models, demo rides and EV service.',
+      to: '/electric',
+      image: '/images/products/electric/3501.webp',
+    },
   ],
   dealerBlurb:
     'HY Bajaj is an authorised Bajaj dealer serving Muzaffarpur and nearby towns. Whether you want a Pulsar for daily commute, a Chetak for silent city rides, or a commercial three-wheeler for business — our team helps with on-road price, finance, exchange and after-sales service.',
   dealerTagline: 'Driving Dreams, Delivering Excellence',
   averageRating: '4.8 / 5',
   financePromo: {
-    image:
-      'https://images.unsplash.com/photo-1558981403-c5f9899a28cb?auto=format&fit=crop&w=1600&q=80',
+    image: '/images/home/finance-offers-banner.webp',
     title: 'Check Finance Offers',
-    subtitle:
-      'Drive home your Bajaj with easy EMI. Our finance desk helps you compare plans from leading partners.',
+    subtitle: '',
     ctaText: 'Check Finance Offers',
     ctaTo: '/finance',
   },
@@ -439,6 +464,30 @@ const DEFAULT_HOMEPAGE = {
 
 const REMOVED_HERO_IMAGE = '/images/heroes/three-wheelers/brand-page.webp';
 
+const LEGACY_HOME_HERO_SIGNATURE = [
+  '/images/heroes/motorcycles/ns400-homepage.webp',
+  '/images/heroes/motorcycles/ns125-whatsnew-web.webp',
+  '/images/heroes/motorcycles/d400-homepage.webp',
+  '/images/heroes/electric/c25-web.webp',
+].join('|');
+
+function heroImageSignature(heroes) {
+  return (heroes || []).map((h) => h.image).join('|');
+}
+
+function mergeDiscoverWithDefaults(existing) {
+  const list = [...(existing || [])];
+  const keys = new Set(list.map((d) => `${String(d.title || '').trim()}|${String(d.to || '').trim()}`));
+  for (const item of DEFAULT_HOMEPAGE.discover) {
+    const key = `${item.title}|${item.to}`;
+    if (!keys.has(key)) {
+      list.push(item);
+      keys.add(key);
+    }
+  }
+  return list;
+}
+
 function applyContentDefaults(content) {
   const out = { ...content };
   out.sections = { ...DEFAULT_HOMEPAGE.sections, ...(content.sections || {}) };
@@ -474,9 +523,46 @@ async function getHomepageContent() {
     return applyContentDefaults(created.toObject());
   }
 
+  let dirty = false;
   const before = doc.heroes?.length || 0;
   doc.heroes = (doc.heroes || []).filter((h) => h.image !== REMOVED_HERO_IMAGE);
-  if (doc.heroes.length !== before) {
+  if (doc.heroes.length !== before) dirty = true;
+
+  if (
+    !doc.heroes.length ||
+    heroImageSignature(doc.heroes) === LEGACY_HOME_HERO_SIGNATURE
+  ) {
+    doc.heroes = DEFAULT_HOMEPAGE.heroes;
+    dirty = true;
+  }
+
+  const financeImg = doc.financePromo?.image || '';
+  if (!financeImg || financeImg.includes('unsplash.com')) {
+    doc.financePromo = {
+      ...(doc.financePromo?.toObject?.() || doc.financePromo || {}),
+      ...DEFAULT_HOMEPAGE.financePromo,
+    };
+    dirty = true;
+  }
+
+  const legacyFinanceBullets = [
+    'Lowest down payment options',
+    'Instant approval process',
+    'Flexible tenure & EMI plans',
+    'Minimal documentation',
+  ].join('|');
+  if ((doc.financeBullets || []).join('|') === legacyFinanceBullets) {
+    doc.financeBullets = DEFAULT_HOMEPAGE.financeBullets;
+    dirty = true;
+  }
+
+  const mergedDiscover = mergeDiscoverWithDefaults(doc.discover);
+  if (mergedDiscover.length !== (doc.discover?.length || 0)) {
+    doc.discover = mergedDiscover;
+    dirty = true;
+  }
+
+  if (dirty) {
     await doc.save();
     invalidatePublicSiteCache();
   }
