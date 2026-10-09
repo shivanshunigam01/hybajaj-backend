@@ -562,6 +562,16 @@ async function getHomepageContent() {
     dirty = true;
   }
 
+  const legacyDiscoverTitles = ['About HY Bajaj', 'Service & workshop', 'Contact & directions'];
+  const currentTitles = (doc.discover || []).map((d) => d.title).sort().join('|');
+  if (
+    currentTitles === legacyDiscoverTitles.sort().join('|') &&
+    (doc.discover?.length || 0) <= 3
+  ) {
+    doc.discover = DEFAULT_HOMEPAGE.discover;
+    dirty = true;
+  }
+
   if (dirty) {
     await doc.save();
     invalidatePublicSiteCache();
